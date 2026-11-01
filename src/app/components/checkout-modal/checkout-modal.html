@@ -168,7 +168,7 @@
           (click)="placeOrder()" 
           [disabled]="isSubmitting()">
           @if (isSubmitting()) {
-            <span>Saving to Firestore...</span>
+            <span>Saving ...</span>
           } @else {
             <span>Confirm & Place Order (₹{{ cartService.grandTotal() | number }})</span>
             <span class="material-symbols-outlined">verified</span>
@@ -183,7 +183,7 @@
         </div>
         <h2 class="font-serif success-title">Order Confirmed with Shreem!</h2>
         <p class="success-subtitle">
-          Thank you, <strong>{{ orderSuccess()?.customerName }}</strong>. Your luxury clothing order has been placed and registered in the Firestore database.
+          Thank you, <strong>{{ orderSuccess()?.customerName }}</strong>. Your luxury clothing order has been placed.
         </p>
 
         <div class="order-receipt-card">
@@ -219,10 +219,6 @@
           <button class="btn btn-primary" (click)="dismiss()">
             Continue Shopping
           </button>
-          <a routerLink="/admin/orders" (click)="dismiss()" class="btn btn-outline">
-            <span class="material-symbols-outlined">visibility</span>
-            View in Admin Orders
-          </a>
         </div>
       </div>
     }

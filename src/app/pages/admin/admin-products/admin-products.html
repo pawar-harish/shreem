@@ -25,7 +25,7 @@
     <div class="alert-box error">
       <span class="material-symbols-outlined">error</span>
       <div class="alert-content">
-        <strong>Firestore Access Error:</strong>
+        <strong>Access Error:</strong>
         <p>{{ errorMessage() }}</p>
       </div>
     </div>
@@ -129,7 +129,7 @@
     @if (isLoading()) {
       <div class="loading-state-container">
         <div class="spinner"></div>
-        <p>Syncing products from Firestore collections...</p>
+        <p>Syncing products...</p>
       </div>
     } @else {
       <!-- Products Table -->
@@ -249,7 +249,7 @@
       <!-- Table Footer with Real-time Info -->
       <div class="table-footer-bar">
         <span>Showing <strong>{{ filteredProducts().length }}</strong> clothing items in catalog</span>
-        <span class="firestore-note">⚡ Real-time updates active via Firestore <code>onSnapshot</code></span>
+        <!-- <span class="firestore-note">⚡ Real-time updates active via Firestore <code>onSnapshot</code></span> -->
       </div>
     }
   </div>
@@ -266,7 +266,7 @@
             </span>
             <div>
               <h3>{{ modalMode() === 'add' ? 'Add New Clothing Product' : 'Edit Clothing Product' }}</h3>
-              <p class="subtext">Data will be stored directly in Firestore <code>/products</code> collection.</p>
+              <!-- <p class="subtext">Data will be stored directly in Firestore <code>/products</code> collection.</p> -->
             </div>
           </div>
           <button class="btn-icon" (click)="closeModal()">
@@ -295,7 +295,7 @@
               <!-- Dynamic Category Selection & Subcategory -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Category * (From Firestore)</label>
+                  <label class="form-label">Category *</label>
                   <select 
                     class="form-control" 
                     [ngModel]="formData().category" 
@@ -469,7 +469,7 @@
               <span>Saving to Firestore...</span>
             } @else {
               <span class="material-symbols-outlined">save</span>
-              <span>{{ modalMode() === 'add' ? 'Create Product in Firestore' : 'Save Changes' }}</span>
+              <span>{{ modalMode() === 'add' ? 'Create Product' : 'Save Changes' }}</span>
             }
           </button>
         </div>

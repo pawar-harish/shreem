@@ -4,10 +4,6 @@
     <div class="container announcement-content">
       <span>✨ Complimentary Silk Stole on orders above ₹4,999 | Use Code: <strong>SHREEM10</strong> for 10% Off</span>
       <div class="top-meta">
-        <span class="db-status" [title]="firebaseService.statusMessage$ | async">
-          <span class="status-dot" [class.dot-online]="(firebaseService.isConnected$ | async)"></span>
-          {{ (firebaseService.isConnected$ | async) ? 'Firestore Live Sync' : 'Connecting...' }}
-        </span>
         <a routerLink="/admin" class="admin-link-pill">
           <span class="material-symbols-outlined icon-sm">admin_panel_settings</span>
           Admin Portal
@@ -34,7 +30,7 @@
         </div>
       </a>
 
-      <!-- Category Links (Desktop) - Dynamically loaded from Firestore -->
+      <!-- Category Links (Desktop) -->
       <div class="desktop-categories">
         <button 
           type="button" 
@@ -112,7 +108,7 @@
         </div>
 
         <div class="mobile-drawer-body">
-          <p class="section-label">FIRESTORE CATEGORIES</p>
+          <p class="section-label">CATEGORIES</p>
           <div class="mobile-nav-list">
             <button class="mobile-nav-item" (click)="selectCategory('all')">
               <span>All Clothing</span>

@@ -1,0 +1,223 @@
+<div class="admin-categories-page">
+  <div class="admin-header-row">
+    <div>
+      <h1 class="page-title">Clothing Categories Management</h1>
+      <p class="page-subtitle">Organize apparel architecture across Men, Women, Kids, and Ethnic wear in Firestore collections.</p>
+    </div>
+    <div class="header-actions">
+      @if (categories().length === 0 && !isLoading()) {
+        <button class="btn btn-outline" (click)="seedDefaultCategories()">
+          <span class="material-symbols-outlined">cloud_upload</span>
+          <span>Seed Default Categories</span>
+        </button>
+      }
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <span class="material-symbols-outlined">add</span>
+        <span>Add New Category</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Alert if any -->
+  @if (errorMessage()) {
+    <div class="alert-box error">
+      <span class="material-symbols-outlined">error</span>
+      <div class="alert-content">
+        <strong>Firestore Access Error:</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-state-container">
+      <div class="spinner"></div>
+      <p>Loading categories from Firestore collections...</p>
+    </div>
+  } @else {
+    <!-- Categories Grid -->
+    <div class="categories-grid">
+      @if (categories().length === 0) {
+        <div class="empty-state-card">
+          <span class="material-symbols-outlined empty-icon">category</span>
+          <h3>No categories found in Firestore</h3>
+          <p>Create your first category or click "Seed Default Categories" to get started.</p>
+          <button class="btn btn-primary" (click)="openAddModal()">Create First Category</button>
+        </div>
+      } @else {
+        @for (cat of categories(); track cat.id) {
+          <div class="category-admin-card">
+            <div class="card-cover-wrapper">
+              <img [src]="cat.imageUrl" [alt]="cat.name" />
+              <div class="cover-overlay"></div>
+              <span class="slug-badge">/{{ cat.slug }}</span>
+              <span class="items-count-pill">{{ getProductCount(cat.name) }} items</span>
+            </div>
+
+            <div class="card-content">
+              <div class="card-title-row">
+                <h3 class="cat-title">{{ cat.name }}</h3>
+                @if (cat.isFeatured) {
+                  <span class="badge badge-gold">Featured</span>
+                }
+              </div>
+              <p class="cat-desc">{{ cat.description }}</p>
+
+              <div class="card-action-bar">
+                <a [routerLink]="['/admin/products']" class="view-products-link">
+                  <span class="material-symbols-outlined">checkroom</span>
+                  <span>View Products ({{ getProductCount(cat.name) }})</span>
+                </a>
+
+                <div class="btn-group">
+                  <button class="btn-action edit" (click)="openEditModal(cat)" title="Edit Category">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="btn-action delete" (click)="confirmDelete(cat)" title="Delete Category">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ADD / EDIT CATEGORY MODAL -->
+  @if (isModalOpen()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="title-with-badge">
+            <span class="material-symbols-outlined header-icon">category</span>
+            <div>
+              <h3>{{ modalMode() === 'add' ? 'Add Clothing Category' : 'Edit Category' }}</h3>
+              <p class="subtext">Saves directly into Firestore <code>/categories</code> collection.</p>
+            </div>
+          </div>
+          <button class="btn-icon" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Category Name *</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="catName()" 
+              (ngModelChange)="onNameChange($event)"
+              placeholder="e.g. Women, Men, Kids, Ethnic" 
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">URL Slug</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="catSlug()" 
+              (ngModelChange)="catSlug.set($event)"
+              placeholder="e.g. women" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea 
+              rows="2" 
+              class="form-control" 
+              [ngModel]="catDesc()" 
+              (ngModelChange)="catDesc.set($event)"
+              placeholder="Brief fashion editorial description"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Cover Image URL</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="catImageUrl()" 
+              (ngModelChange)="catImageUrl.set($event)"
+              placeholder="https://..."
+            />
+            @if (catImageUrl()) {
+              <div class="img-preview">
+                <img [src]="catImageUrl()" alt="Preview" />
+              </div>
+            }
+
+            <label class="form-label" style="margin-top: 0.75rem;">Or Choose Preset Cover:</label>
+            <div class="preset-cat-strip">
+              @for (preset of presetCategoryImages; track preset.url) {
+                <button 
+                  type="button" 
+                  class="preset-cat-chip" 
+                  [class.active]="catImageUrl() === preset.url"
+                  (click)="selectPresetImage(preset.url)">
+                  {{ preset.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-group-checkbox">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [ngModel]="isFeatured()" 
+                (ngModelChange)="isFeatured.set($event)" 
+              />
+              <span>Feature on User Homepage</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="saveCategory()" 
+            [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span>Saving to Firestore...</span>
+            } @else {
+              <span>{{ modalMode() === 'add' ? 'Create Category in Firestore' : 'Update Category' }}</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- DELETE CONFIRMATION -->
+  @if (categoryToDelete()) {
+    <div class="modal-overlay" (click)="categoryToDelete.set(null)">
+      <div class="modal-card modal-sm delete-confirm-card" (click)="$event.stopPropagation()">
+        <div class="delete-icon-circle">
+          <span class="material-symbols-outlined">delete_forever</span>
+        </div>
+        <h3 class="delete-title">Delete Category?</h3>
+        <p class="delete-desc">
+          Are you sure you want to delete category <strong>"{{ categoryToDelete()?.name }}"</strong> from Firestore?
+          @if (getProductCount(categoryToDelete()?.name || '') > 0) {
+            <span class="warning-text">⚠️ Note: There are currently {{ getProductCount(categoryToDelete()?.name || '') }} product(s) assigned to this category.</span>
+          }
+        </p>
+        <div class="delete-actions">
+          <button class="btn btn-outline" (click)="categoryToDelete.set(null)" [disabled]="isDeleting()">Cancel</button>
+          <button class="btn btn-danger" (click)="executeDelete()" [disabled]="isDeleting()">
+            <span>{{ isDeleting() ? 'Deleting...' : 'Delete from Firestore' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

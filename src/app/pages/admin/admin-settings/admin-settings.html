@@ -1,0 +1,219 @@
+<div class="admin-settings-page">
+  <div class="admin-header-row">
+    <div>
+      <h1 class="page-title">Firebase & Firestore Integration</h1>
+      <p class="page-subtitle">Configure your live Firebase database credentials and manage catalog cloud synchronization.</p>
+    </div>
+  </div>
+
+  <!-- Spark Plan Optimization Badge -->
+  <div class="spark-plan-banner">
+    <div class="spark-icon-circle">
+      <span class="material-symbols-outlined">bolt</span>
+    </div>
+    <div class="spark-info">
+      <h4>⚡ Firebase Spark (Free) Plan Active</h4>
+      <p>
+        The application is fully optimized for the Firebase Free Spark Plan. All operations run directly via the client-side Firestore SDK with real-time <code>onSnapshot</code> listeners and batch writes. No paid Blaze plan or Cloud Functions required.
+      </p>
+    </div>
+    <div class="spark-quotas">
+      <span class="quota-pill">50,000 Reads/Day (Free)</span>
+      <span class="quota-pill">20,000 Writes/Day (Free)</span>
+      <span class="quota-pill">1 GiB Storage (Free)</span>
+    </div>
+  </div>
+
+  <!-- Live Connection Status Banner -->
+  <div class="status-banner" [ngClass]="{
+    'banner-connected': (firebaseService.connectionStatus$ | async) === 'connected',
+    'banner-mock': (firebaseService.connectionStatus$ | async) === 'mock_fallback',
+    'banner-error': (firebaseService.connectionStatus$ | async) === 'error'
+  }">
+    <div class="status-banner-icon">
+      <span class="material-symbols-outlined">
+        {{ (firebaseService.connectionStatus$ | async) === 'connected' ? 'cloud_done' : 'cloud_sync' }}
+      </span>
+    </div>
+    <div class="status-banner-text">
+      <h4>
+        Database Status: 
+        <strong>
+          {{ (firebaseService.connectionStatus$ | async) === 'connected' ? 'Connected to Cloud Firestore' : 'Connecting to Firestore...' }}
+        </strong>
+      </h4>
+      <p>{{ firebaseService.statusMessage$ | async }}</p>
+    </div>
+  </div>
+
+  @if (feedbackMessage()) {
+    <div class="feedback-alert" [ngClass]="'alert-' + feedbackMessage()?.type">
+      <span class="material-symbols-outlined">
+        {{ feedbackMessage()?.type === 'success' ? 'check_circle' : 'info' }}
+      </span>
+      <span>{{ feedbackMessage()?.text }}</span>
+    </div>
+  }
+
+  <div class="settings-grid">
+    <!-- Firebase Config Form -->
+    <div class="settings-card">
+      <div class="card-header">
+        <span class="material-symbols-outlined header-icon">key</span>
+        <div>
+          <h3>Firebase Project Credentials</h3>
+          <p class="card-subtitle">Active configuration for project <strong>{{ config().projectId }}</strong></p>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Project ID</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [ngModel]="config().projectId" 
+            (ngModelChange)="config.update(c => ({ ...c, projectId: $event }))"
+            placeholder="e.g. shreem-c3cf7"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">API Key (apiKey)</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [ngModel]="config().apiKey" 
+            (ngModelChange)="config.update(c => ({ ...c, apiKey: $event }))"
+            placeholder="AIzaSy..."
+          />
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Auth Domain</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="config().authDomain" 
+              (ngModelChange)="config.update(c => ({ ...c, authDomain: $event }))"
+              placeholder="shreem-c3cf7.firebaseapp.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Storage Bucket</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="config().storageBucket" 
+              (ngModelChange)="config.update(c => ({ ...c, storageBucket: $event }))"
+              placeholder="shreem-c3cf7.firebasestorage.app"
+            />
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Messaging Sender ID</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="config().messagingSenderId" 
+              (ngModelChange)="config.update(c => ({ ...c, messagingSenderId: $event }))"
+              placeholder="46362930397"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">App ID (appId)</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [ngModel]="config().appId" 
+              (ngModelChange)="config.update(c => ({ ...c, appId: $event }))"
+              placeholder="1:46362930397:web:..."
+            />
+          </div>
+        </div>
+
+        <div class="btn-actions-row">
+          <button class="btn btn-primary" (click)="saveAndConnect()" [disabled]="isSaving()">
+            <span class="material-symbols-outlined">save</span>
+            <span>{{ isSaving() ? 'Saving & Connecting...' : 'Save & Reconnect Firestore' }}</span>
+          </button>
+          <button class="btn btn-outline" (click)="resetToDefault()">
+            Revert to Default
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Seed & Cloud Sync Tools -->
+    <div class="settings-card">
+      <div class="card-header">
+        <span class="material-symbols-outlined header-icon">database</span>
+        <div>
+          <h3>Database Synchronization & Seeding</h3>
+          <p class="card-subtitle">Populate your Firestore collections with realistic clothing datasets.</p>
+        </div>
+      </div>
+
+      <div class="card-body tools-body">
+        <!-- Seed to Firestore action -->
+        <div class="tool-item">
+          <div class="tool-info">
+            <h4>Seed Clothing Catalog to Cloud Firestore</h4>
+            <p>
+              Instantly pushes initial categories (Women, Men, Kids, Ethnic) and rich handcrafted clothing products into your active Firestore database collections (<code>/products</code> and <code>/categories</code>).
+            </p>
+          </div>
+          <button class="btn btn-primary" (click)="seedDataToFirestore()" [disabled]="isSeeding()">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            <span>{{ isSeeding() ? 'Seeding to Firestore...' : 'Seed Catalog to Firestore' }}</span>
+          </button>
+        </div>
+
+        <hr class="tool-divider" />
+
+        <!-- Reset Local Demo Data -->
+        <div class="tool-item">
+          <div class="tool-info">
+            <h4>Reset Local Offline Cache</h4>
+            <p>
+              Restore the built-in showroom clothing catalog and clear cached orders in your browser's local store.
+            </p>
+          </div>
+          <button class="btn btn-outline" (click)="resetLocalData()">
+            <span class="material-symbols-outlined">restart_alt</span>
+            <span>Reset Demo Store</span>
+          </button>
+        </div>
+
+        <hr class="tool-divider" />
+
+        <!-- Firestore Security Rules Helper -->
+        <div class="rules-helper-box">
+          <h4>💡 Firestore Security Rules</h4>
+          <p>
+            Your current <code>firestore.rules</code> file is configured to allow read and write operations.
+          </p>
+          <pre class="rules-snippet">rules_version = '2';
+service cloud.firestore &#123;
+  match /databases/&#123;database&#125;/documents &#123;
+    match /products/&#123;document&#125; &#123;
+      allow read, write: if true;
+    &#125;
+    match /categories/&#123;document&#125; &#123;
+      allow read, write: if true;
+    &#125;
+    match /orders/&#123;document&#125; &#123;
+      allow read, write: if true;
+    &#125;
+  &#125;
+&#125;</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,290 @@
+<div class="admin-orders-page">
+  <div class="admin-header-row">
+    <div>
+      <h1 class="page-title">Order Fulfillment & Logistics</h1>
+      <p class="page-subtitle">Track, fulfill, and update live orders registered in Firestore.</p>
+    </div>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  <div class="order-stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon-wrapper gold-theme">
+        <span class="material-symbols-outlined">receipt_long</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ totalOrders() }}</span>
+        <span class="stat-name">Total Orders</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="setStatus('Pending')">
+      <div class="stat-icon-wrapper pending-theme">
+        <span class="material-symbols-outlined">pending</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ pendingCount() }}</span>
+        <span class="stat-name">Pending Verification</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="setStatus('Processing')">
+      <div class="stat-icon-wrapper process-theme">
+        <span class="material-symbols-outlined">package_2</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ processingCount() }}</span>
+        <span class="stat-name">In Tailoring / Transit</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="setStatus('Delivered')">
+      <div class="stat-icon-wrapper delivered-theme">
+        <span class="material-symbols-outlined">verified</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ deliveredCount() }}</span>
+        <span class="stat-name">Successfully Delivered</span>
+      </div>
+    </div>
+
+    <div class="stat-card revenue-card">
+      <div class="stat-icon-wrapper revenue-theme">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">₹{{ totalRevenue() | number }}</span>
+        <span class="stat-name">Gross Couture Sales</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders Table Control Card -->
+  <div class="table-control-card">
+    <div class="filter-top-row">
+      <!-- Status Tabs -->
+      <div class="status-tabs">
+        <button class="status-tab" [class.active]="selectedStatus() === 'all'" (click)="setStatus('all')">
+          All Orders ({{ totalOrders() }})
+        </button>
+        <button class="status-tab" [class.active]="selectedStatus().toLowerCase() === 'pending'" (click)="setStatus('Pending')">
+          Pending ({{ pendingCount() }})
+        </button>
+        <button class="status-tab" [class.active]="selectedStatus().toLowerCase() === 'processing'" (click)="setStatus('Processing')">
+          Processing ({{ processingCount() }})
+        </button>
+        <button class="status-tab" [class.active]="selectedStatus().toLowerCase() === 'delivered'" (click)="setStatus('Delivered')">
+          Delivered ({{ deliveredCount() }})
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="admin-search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input 
+          type="text" 
+          placeholder="Search by Order ID, customer, city..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)"
+        />
+        @if (searchQuery()) {
+          <button class="clear-btn" (click)="searchQuery.set('')">×</button>
+        }
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Order Ref</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total Amount</th>
+            <th>Payment</th>
+            <th>Order Status</th>
+            <th>Date</th>
+            <th style="text-align: right;">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (filteredOrders().length === 0) {
+            <tr>
+              <td colspan="8" class="empty-table-cell">
+                <span class="material-symbols-outlined empty-table-icon">shopping_bag</span>
+                <p>No customer orders currently found matching filter.</p>
+              </td>
+            </tr>
+          } @else {
+            @for (order of filteredOrders(); track order.id) {
+              <tr>
+                <td>
+                  <strong class="order-ref-code">{{ order.id }}</strong>
+                </td>
+                <td>
+                  <div class="customer-cell">
+                    <span class="cust-name">{{ order.customerName }}</span>
+                    <span class="cust-city">{{ order.city }} • {{ order.phone }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="items-summary-peek">
+                    <span class="item-count-badge">{{ order.items.length }} piece(s)</span>
+                    <span class="peek-title">{{ order.items[0]?.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <strong class="order-total-price">₹{{ order.totalAmount | number }}</strong>
+                </td>
+                <td>
+                  <span class="payment-badge">{{ order.paymentMethod }}</span>
+                </td>
+                <td>
+                  <select 
+                    class="status-select-badge" 
+                    [class.status-pending]="order.status === 'Pending'"
+                    [class.status-processing]="order.status === 'Processing'"
+                    [class.status-shipped]="order.status === 'Shipped'"
+                    [class.status-delivered]="order.status === 'Delivered'"
+                    [class.status-cancelled]="order.status === 'Cancelled'"
+                    [value]="order.status"
+                    (change)="updateStatus(order.id, $event)">
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </td>
+                <td>
+                  <span class="date-text">{{ order.createdAt | date:'shortDate' }}</span>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-outline btn-sm" (click)="openOrderDetails(order)">
+                    <span class="material-symbols-outlined">visibility</span>
+                    View
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ORDER DETAILS MODAL -->
+  @if (selectedOrder()) {
+    <div class="modal-overlay" (click)="closeOrderDetails()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        
+        <div class="modal-header">
+          <div class="title-with-badge">
+            <span class="material-symbols-outlined header-icon">receipt_long</span>
+            <div>
+              <h3>Order Details: {{ selectedOrder()?.id }}</h3>
+              <p class="subtext">Placed on {{ selectedOrder()?.createdAt | date:'medium' }}</p>
+            </div>
+          </div>
+          <button class="btn-icon" (click)="closeOrderDetails()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="order-modal-grid">
+            <!-- Left: Items Ordered -->
+            <div class="ordered-items-col">
+              <h4 class="col-heading">Garments Ordered ({{ selectedOrder()?.items?.length }})</h4>
+              <div class="items-detailed-list">
+                @for (item of selectedOrder()?.items; track item.productId + item.size) {
+                  <div class="ordered-item-card">
+                    <img [src]="item.imageUrl" [alt]="item.name" class="item-img" />
+                    <div class="item-main">
+                      <h5 class="item-name">{{ item.name }}</h5>
+                      <div class="item-meta">
+                        <span>Size: <strong>{{ item.size }}</strong></span>
+                        @if (item.color) {
+                          <span>Color: <strong>{{ item.color }}</strong></span>
+                        }
+                      </div>
+                      <div class="item-calc">
+                        <span>₹{{ item.price | number }} × {{ item.quantity }}</span>
+                        <strong>₹{{ (item.price * item.quantity) | number }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Price Breakdown -->
+              <div class="modal-pricing-box">
+                <div class="line">
+                  <span>Subtotal</span>
+                  <span>₹{{ selectedOrder()?.subtotal | number }}</span>
+                </div>
+                @if ((selectedOrder()?.discount || 0) > 0) {
+                  <div class="line discount">
+                    <span>Discount</span>
+                    <span>-₹{{ selectedOrder()?.discount | number }}</span>
+                  </div>
+                }
+                <div class="line">
+                  <span>Shipping</span>
+                  <span>{{ selectedOrder()?.shipping === 0 ? 'Complimentary' : '₹' + selectedOrder()?.shipping }}</span>
+                </div>
+                <div class="line total">
+                  <span>Grand Total</span>
+                  <span class="gold-val">₹{{ selectedOrder()?.totalAmount | number }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Customer & Shipping Details -->
+            <div class="customer-info-col">
+              <h4 class="col-heading">Delivery & Customer Info</h4>
+              <div class="info-block">
+                <div class="info-row">
+                  <span class="lbl">Customer Name:</span>
+                  <span class="val">{{ selectedOrder()?.customerName }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Email:</span>
+                  <span class="val">{{ selectedOrder()?.email }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Phone:</span>
+                  <span class="val">{{ selectedOrder()?.phone }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Delivery Address:</span>
+                  <span class="val">{{ selectedOrder()?.address }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">City / State:</span>
+                  <span class="val">{{ selectedOrder()?.city }} ({{ selectedOrder()?.postalCode }})</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Payment Method:</span>
+                  <span class="val">{{ selectedOrder()?.paymentMethod }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Status in Firestore:</span>
+                  <span class="badge badge-success">{{ selectedOrder()?.status }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="closeOrderDetails()">Close</button>
+        </div>
+
+      </div>
+    </div>
+  }
+</div>
+

@@ -1,0 +1,141 @@
+@if (cartService.isCartOpen()) {
+  <div class="cart-backdrop" (click)="cartService.closeCart()">
+    <div class="cart-drawer-panel" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          <h3>Your Bag ({{ cartService.itemCount() }})</h3>
+        </div>
+        <button class="btn-icon" (click)="cartService.closeCart()" aria-label="Close cart">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Free shipping meter -->
+      <div class="shipping-meter">
+        @if (cartService.subtotal() >= 2999) {
+          <div class="meter-text unlocked">
+            <span class="material-symbols-outlined">verified</span>
+            <span>You've unlocked <strong>Complimentary Luxury Delivery</strong>!</span>
+          </div>
+          <div class="meter-bar"><div class="meter-fill" style="width: 100%;"></div></div>
+        } @else {
+          <div class="meter-text">
+            <span>Add <strong>₹{{ (2999 - cartService.subtotal()) | number }}</strong> more to enjoy Free Shipping</span>
+          </div>
+          <div class="meter-bar">
+            <div class="meter-fill" [style.width.%]="(cartService.subtotal() / 2999) * 100"></div>
+          </div>
+        }
+      </div>
+
+      <!-- Items List -->
+      <div class="drawer-body">
+        @if (cartService.cartItems().length === 0) {
+          <div class="empty-cart-state">
+            <span class="material-symbols-outlined empty-icon">shopping_basket</span>
+            <h4>Your shopping bag is empty</h4>
+            <p>Explore handcrafted sarees, kurtas, and luxury ensembles.</p>
+            <button class="btn btn-primary" (click)="cartService.closeCart()">
+              Explore Clothing Collection
+            </button>
+          </div>
+        } @else {
+          <div class="cart-items-list">
+            @for (item of cartService.cartItems(); track item.productId + item.size + (item.color || '')) {
+              <div class="cart-card">
+                <img [src]="item.imageUrl" [alt]="item.name" class="item-thumb" />
+                <div class="item-info">
+                  <div class="item-title-row">
+                    <h4 class="item-name">{{ item.name }}</h4>
+                    <button class="remove-btn" (click)="cartService.removeItem(item.productId, item.size)" title="Remove item">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                  <div class="item-specs">
+                    <span class="spec-tag">Size: {{ item.size }}</span>
+                    @if (item.color) {
+                      <span class="spec-tag">{{ item.color }}</span>
+                    }
+                  </div>
+                  <div class="item-price-row">
+                    <div class="quantity-stepper">
+                      <button (click)="cartService.updateQuantity(item.productId, item.size, -1)">-</button>
+                      <span>{{ item.quantity }}</span>
+                      <button (click)="cartService.updateQuantity(item.productId, item.size, 1)">+</button>
+                    </div>
+                    <div class="item-subtotal">₹{{ (item.price * item.quantity) | number }}</div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Footer Checkout Actions -->
+      @if (cartService.cartItems().length > 0) {
+        <div class="drawer-footer">
+          <!-- Promo Code Section -->
+          <div class="promo-box">
+            @if (cartService.appliedPromo()) {
+              <div class="applied-badge">
+                <div class="applied-left">
+                  <span class="material-symbols-outlined">sell</span>
+                  <span>Code <strong>{{ cartService.appliedPromo() }}</strong> applied (-{{ cartService.promoDiscountPercent() }}%)</span>
+                </div>
+                <button class="promo-remove-link" (click)="removePromo()">Remove</button>
+              </div>
+            } @else {
+              <div class="promo-input-group">
+                <input 
+                  type="text" 
+                  placeholder="Promo Code (e.g. SHREEM10)" 
+                  [ngModel]="promoInput()" 
+                  (ngModelChange)="promoInput.set($event)" 
+                  (keyup.enter)="applyPromo()"
+                />
+                <button class="btn btn-outline" (click)="applyPromo()">Apply</button>
+              </div>
+              @if (promoFeedback()) {
+                <p class="promo-feedback" [class.success]="promoFeedback()?.success" [class.error]="!promoFeedback()?.success">
+                  {{ promoFeedback()?.message }}
+                </p>
+              }
+            }
+          </div>
+
+          <!-- Price Summary Breakdown -->
+          <div class="price-breakdown">
+            <div class="price-line">
+              <span>Subtotal</span>
+              <span>₹{{ cartService.subtotal() | number }}</span>
+            </div>
+            @if (cartService.discountAmount() > 0) {
+              <div class="price-line discount-line">
+                <span>Discount ({{ cartService.appliedPromo() }})</span>
+                <span>-₹{{ cartService.discountAmount() | number }}</span>
+              </div>
+            }
+            <div class="price-line">
+              <span>Shipping & Delivery</span>
+              <span>{{ cartService.shipping() === 0 ? 'FREE' : '₹' + cartService.shipping() }}</span>
+            </div>
+            <div class="price-line total-line">
+              <span>Estimated Total</span>
+              <span class="total-number">₹{{ cartService.grandTotal() | number }}</span>
+            </div>
+          </div>
+
+          <!-- Checkout Button -->
+          <button class="btn btn-primary checkout-btn" (click)="proceedToCheckout()">
+            <span>Proceed to Checkout</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+

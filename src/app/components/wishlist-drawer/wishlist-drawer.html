@@ -1,0 +1,51 @@
+@if (wishlistService.isWishlistOpen()) {
+  <div class="wishlist-backdrop" (click)="wishlistService.closeWishlist()">
+    <div class="wishlist-panel" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span class="material-symbols-outlined icon-filled" style="color: #ef4444;">favorite</span>
+          <h3>Your Saved Wishlist ({{ wishlistService.count() }})</h3>
+        </div>
+        <button class="btn-icon" (click)="wishlistService.closeWishlist()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        @if (wishlistService.wishlistItems().length === 0) {
+          <div class="empty-state">
+            <span class="material-symbols-outlined empty-icon">favorite_border</span>
+            <h4>No items saved yet</h4>
+            <p>Tap the heart icon on any outfit to save it for your next celebration.</p>
+            <button class="btn btn-outline" (click)="wishlistService.closeWishlist()">
+              Browse Collection
+            </button>
+          </div>
+        } @else {
+          <div class="wishlist-list">
+            @for (product of wishlistService.wishlistItems(); track product.id) {
+              <div class="wishlist-item-card">
+                <img [src]="product.imageUrl" [alt]="product.name" class="wishlist-img" />
+                <div class="wishlist-details">
+                  <div class="wishlist-cat">{{ product.category }} • {{ product.subcategory }}</div>
+                  <h4 class="wishlist-title">{{ product.name }}</h4>
+                  <div class="wishlist-price">₹{{ product.price | number }}</div>
+                  <div class="wishlist-actions">
+                    <button class="btn btn-primary btn-sm" (click)="moveToCart(product)">
+                      <span class="material-symbols-outlined" style="font-size: 16px;">shopping_bag</span>
+                      Move to Bag
+                    </button>
+                    <button class="btn-remove" (click)="wishlistService.removeFromWishlist(product.id)" title="Remove">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+

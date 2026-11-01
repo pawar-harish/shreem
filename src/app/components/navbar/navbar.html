@@ -1,0 +1,141 @@
+<header class="navbar-wrapper">
+  <!-- Top announcement bar -->
+  <div class="announcement-bar">
+    <div class="container announcement-content">
+      <span>✨ Complimentary Silk Stole on orders above ₹4,999 | Use Code: <strong>SHREEM10</strong> for 10% Off</span>
+      <div class="top-meta">
+        <span class="db-status" [title]="firebaseService.statusMessage$ | async">
+          <span class="status-dot" [class.dot-online]="(firebaseService.isConnected$ | async)"></span>
+          {{ (firebaseService.isConnected$ | async) ? 'Firestore Live Sync' : 'Connecting...' }}
+        </span>
+        <a routerLink="/admin" class="admin-link-pill">
+          <span class="material-symbols-outlined icon-sm">admin_panel_settings</span>
+          Admin Portal
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Navigation -->
+  <nav class="main-nav">
+    <div class="container nav-container">
+      
+      <!-- Mobile menu trigger -->
+      <button class="mobile-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+
+      <!-- Brand Logo -->
+      <a routerLink="/" class="brand-logo">
+        <span class="brand-symbol">श्री</span>
+        <div class="brand-text">
+          <span class="brand-name">SHREEM</span>
+          <span class="brand-subtitle">COUTURE & APPAREL</span>
+        </div>
+      </a>
+
+      <!-- Category Links (Desktop) - Dynamically loaded from Firestore -->
+      <div class="desktop-categories">
+        <button 
+          type="button" 
+          class="category-nav-link" 
+          (click)="selectCategory('all')">
+          All
+        </button>
+        @for (cat of categories(); track cat.id) {
+          <button 
+            type="button" 
+            class="category-nav-link" 
+            (click)="selectCategory(cat.name)">
+            {{ cat.name }}
+          </button>
+        }
+      </div>
+
+      <!-- Search & Utility Actions -->
+      <div class="nav-actions">
+        <!-- Search bar -->
+        <div class="search-box">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input 
+            type="text" 
+            placeholder="Search kurtas, sarees, sherwanis..." 
+            [ngModel]="searchQuery()" 
+            (ngModelChange)="searchQuery.set($event)"
+            (keyup.enter)="onSearch()"
+          />
+          @if (searchQuery()) {
+            <button class="clear-search-btn" (click)="searchQuery.set(''); onSearch()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          }
+        </div>
+
+        <!-- Wishlist Icon -->
+        <button class="action-btn" (click)="wishlistService.toggleWishlistDrawer()" title="Wishlist">
+          <span class="material-symbols-outlined">favorite</span>
+          @if (wishlistService.count() > 0) {
+            <span class="action-badge">{{ wishlistService.count() }}</span>
+          }
+        </button>
+
+        <!-- Cart Icon with Drawer Toggle -->
+        <button class="action-btn cart-btn" (click)="cartService.openCart()" title="Shopping Cart">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          @if (cartService.itemCount() > 0) {
+            <span class="action-badge">{{ cartService.itemCount() }}</span>
+          }
+          <span class="cart-total-peek">₹{{ cartService.grandTotal() | number }}</span>
+        </button>
+
+        <!-- Admin Portal Switch Button -->
+        <a routerLink="/admin" class="btn btn-dark btn-admin-quick" title="Switch to Admin Panel">
+          <span class="material-symbols-outlined">shield_person</span>
+          <span class="hide-mobile">Admin</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Drawer Menu -->
+  @if (isMobileMenuOpen()) {
+    <div class="mobile-drawer-overlay" (click)="toggleMobileMenu()">
+      <div class="mobile-drawer" (click)="$event.stopPropagation()">
+        <div class="mobile-drawer-header">
+          <div class="brand-logo">
+            <span class="brand-symbol">श्री</span>
+            <span class="brand-name">SHREEM</span>
+          </div>
+          <button class="btn-icon" (click)="toggleMobileMenu()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="mobile-drawer-body">
+          <p class="section-label">FIRESTORE CATEGORIES</p>
+          <div class="mobile-nav-list">
+            <button class="mobile-nav-item" (click)="selectCategory('all')">
+              <span>All Clothing</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+            @for (cat of categories(); track cat.id) {
+              <button 
+                class="mobile-nav-item" 
+                (click)="selectCategory(cat.name)">
+                <span>{{ cat.name }}</span>
+                <span class="material-symbols-outlined">chevron_right</span>
+              </button>
+            }
+          </div>
+
+          <div class="mobile-admin-box">
+            <a routerLink="/admin" (click)="toggleMobileMenu()" class="btn btn-dark" style="width: 100%;">
+              <span class="material-symbols-outlined">admin_panel_settings</span>
+              Open Admin Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</header>

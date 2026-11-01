@@ -1,0 +1,194 @@
+<div class="product-detail-page">
+  <div class="container">
+    
+    @if (isLoading()) {
+      <div class="loading-state-container">
+        <div class="spinner"></div>
+        <p>Fetching garment details from Firestore...</p>
+      </div>
+    } @else if (!product()) {
+      <div class="not-found-container">
+        <span class="material-symbols-outlined not-found-icon">error_outline</span>
+        <h2>Clothing Item Not Found</h2>
+        <p>The product you are looking for may have been removed or does not exist.</p>
+        <a routerLink="/" class="btn btn-primary">Return to Collection</a>
+      </div>
+    } @else {
+      <!-- Breadcrumbs -->
+      <nav class="breadcrumb-nav">
+        <a routerLink="/">Home</a>
+        <span class="sep">/</span>
+        <a routerLink="/" [queryParams]="{ category: product()?.category }">{{ product()?.category }}</a>
+        <span class="sep">/</span>
+        <span class="current">{{ product()?.name }}</span>
+      </nav>
+
+      <div class="product-layout-grid">
+        <!-- Media Gallery -->
+        <div class="product-gallery">
+          <div class="main-image-frame">
+            <img [src]="selectedImage()" [alt]="product()?.name" />
+            @if (product()?.discount) {
+              <span class="badge-discount-tag">-{{ product()?.discount }}% OFF</span>
+            }
+          </div>
+
+          @if (product()?.additionalImages && (product()?.additionalImages?.length || 0) > 0) {
+            <div class="gallery-thumbs">
+              <button 
+                class="thumb-box" 
+                [class.active]="selectedImage() === product()?.imageUrl"
+                (click)="selectedImage.set(product()!.imageUrl)">
+                <img [src]="product()?.imageUrl" [alt]="product()?.name" />
+              </button>
+              @for (img of product()?.additionalImages; track img) {
+                <button 
+                  class="thumb-box" 
+                  [class.active]="selectedImage() === img"
+                  (click)="selectedImage.set(img)">
+                  <img [src]="img" [alt]="product()?.name" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Product Specs & Actions -->
+        <div class="product-details-content">
+          <!-- Category & Rating -->
+          <div class="header-meta">
+            <span class="badge badge-gold">{{ product()?.category }}</span>
+            <span class="subcat-text">{{ product()?.subcategory }}</span>
+            <div class="ratings">
+              <span class="material-symbols-outlined star-icon">star</span>
+              <strong>{{ product()?.rating }}</strong>
+              <span class="reviews-count">({{ product()?.reviewCount }} boutique reviews)</span>
+            </div>
+          </div>
+
+          <h1 class="font-serif product-title">{{ product()?.name }}</h1>
+
+          <!-- Price -->
+          <div class="price-container">
+            <span class="current-price">₹{{ product()?.price | number }}</span>
+            @if (product()?.originalPrice) {
+              <span class="original-price">₹{{ product()?.originalPrice | number }}</span>
+              <span class="savings-tag">Save ₹{{ (product()!.originalPrice! - product()!.price) | number }}</span>
+            }
+          </div>
+          <p class="tax-tag">Inclusive of all taxes & doorstep insurance</p>
+
+          <!-- Description -->
+          <p class="desc-para">{{ product()?.description }}</p>
+
+          <!-- Fabric Badge -->
+          @if (product()?.fabric) {
+            <div class="fabric-badge">
+              <span class="material-symbols-outlined" style="color: var(--primary-gold);">texture</span>
+              <span>Pure Weave: <strong>{{ product()?.fabric }}</strong></span>
+            </div>
+          }
+
+          <!-- Size Selector -->
+          @if (product()?.sizes && product()!.sizes.length > 0) {
+            <div class="option-block">
+              <div class="option-header">
+                <span class="label">Select Size:</span>
+                <span class="val">{{ selectedSize() }}</span>
+              </div>
+              <div class="chips-container">
+                @for (size of product()?.sizes; track size) {
+                  <button 
+                    type="button" 
+                    class="size-chip" 
+                    [class.active]="selectedSize() === size" 
+                    (click)="setSize(size)">
+                    {{ size }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Color Selector -->
+          @if (product()?.colors && product()!.colors.length > 0) {
+            <div class="option-block">
+              <div class="option-header">
+                <span class="label">Available Hues:</span>
+                <span class="val">{{ selectedColor() }}</span>
+              </div>
+              <div class="chips-container">
+                @for (color of product()?.colors; track color) {
+                  <button 
+                    type="button" 
+                    class="color-chip" 
+                    [class.active]="selectedColor() === color" 
+                    (click)="setColor(color)">
+                    {{ color }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Stock Status -->
+          <div class="stock-status-bar">
+            @if (product()!.stock > 0) {
+              <span class="status-dot in-stock"></span>
+              <span>Available in Boutique ({{ product()?.stock }} pieces in stock)</span>
+            } @else {
+              <span class="status-dot out-of-stock"></span>
+              <span class="out-text">Temporarily Sold Out</span>
+            }
+          </div>
+
+          <!-- Quantity & CTAs -->
+          <div class="cta-row">
+            <div class="quantity-stepper">
+              <button (click)="updateQty(-1)">-</button>
+              <span>{{ quantity() }}</span>
+              <button (click)="updateQty(1)">+</button>
+            </div>
+
+            <button 
+              class="btn btn-primary add-bag-btn" 
+              [disabled]="product()!.stock <= 0" 
+              (click)="addToBag()">
+              <span class="material-symbols-outlined">shopping_bag</span>
+              <span>{{ addedFeedback() ? 'Added to Bag! ✓' : 'Add to Shopping Bag' }}</span>
+            </button>
+
+            <button 
+              class="btn btn-outline wishlist-btn" 
+              [class.wishlisted]="isWishlisted()" 
+              (click)="toggleWishlist()"
+              title="Add to Wishlist">
+              <span class="material-symbols-outlined" [class.icon-filled]="isWishlisted()">favorite</span>
+            </button>
+          </div>
+
+          <!-- Assurances -->
+          <div class="boutique-assurances">
+            <div class="assurance-item">
+              <span class="material-symbols-outlined">local_shipping</span>
+              <div>
+                <strong>Complimentary Express Delivery</strong>
+                <p>Delivered within 3-5 business days across India.</p>
+              </div>
+            </div>
+            <div class="assurance-item">
+              <span class="material-symbols-outlined">verified</span>
+              <div>
+                <strong>Authentic Textile Guarantee</strong>
+                <p>Pure silk mark certified and handcrafted with pride.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
+  </div>
+</div>
+

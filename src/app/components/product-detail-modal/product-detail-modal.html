@@ -1,0 +1,164 @@
+<div class="modal-overlay" (click)="dismiss()">
+  <div class="modal-card product-modal-card" (click)="$event.stopPropagation()">
+    
+    <button class="btn-icon close-corner-btn" (click)="dismiss()" aria-label="Close modal">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <div class="product-modal-grid">
+      <!-- Media Gallery -->
+      <div class="gallery-col">
+        <div class="main-display-img-wrapper">
+          <img [src]="selectedImage()" [alt]="product().name" class="main-display-img" />
+          @if (product().discount) {
+            <span class="discount-pill">-{{ product().discount }}% OFF</span>
+          }
+        </div>
+
+        @if (product().additionalImages && (product().additionalImages?.length || 0) > 0) {
+          <div class="thumb-strip">
+            <button 
+              class="thumb-btn" 
+              [class.active]="selectedImage() === product().imageUrl" 
+              (click)="selectedImage.set(product().imageUrl)">
+              <img [src]="product().imageUrl" [alt]="product().name" />
+            </button>
+            @for (img of product().additionalImages; track img) {
+              <button 
+                class="thumb-btn" 
+                [class.active]="selectedImage() === img" 
+                (click)="selectedImage.set(img)">
+                <img [src]="img" [alt]="product().name" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Info Details -->
+      <div class="details-col">
+        <!-- Category & Rating -->
+        <div class="header-badges">
+          <span class="badge badge-gold">{{ product().category }}</span>
+          <span class="subcat-text">{{ product().subcategory }}</span>
+          <div class="rating-stars">
+            <span class="material-symbols-outlined star-icon">star</span>
+            <strong>{{ product().rating }}</strong>
+            <span class="reviews-count">({{ product().reviewCount }} reviews)</span>
+          </div>
+        </div>
+
+        <h2 class="font-serif product-name">{{ product().name }}</h2>
+
+        <!-- Pricing -->
+        <div class="price-strip">
+          <span class="current-price">₹{{ product().price | number }}</span>
+          @if (product().originalPrice) {
+            <span class="original-price">₹{{ product().originalPrice | number }}</span>
+            <span class="savings">Save ₹{{ (product().originalPrice! - product().price) | number }}</span>
+          }
+        </div>
+        <p class="taxes-label">Inclusive of all luxury taxes & tailoring inspection</p>
+
+        <!-- Description -->
+        <p class="description-text">{{ product().description }}</p>
+
+        <!-- Fabric & Craftsmanship -->
+        @if (product().fabric) {
+          <div class="fabric-badge-box">
+            <span class="material-symbols-outlined" style="color: var(--primary-gold); font-size: 20px;">texture</span>
+            <span>Fabric: <strong>{{ product().fabric }}</strong></span>
+          </div>
+        }
+
+        <!-- Size Selection -->
+        @if (product().sizes && product().sizes.length > 0) {
+          <div class="option-section">
+            <div class="option-header">
+              <span class="option-title">Select Size:</span>
+              <span class="option-selected">{{ selectedSize() }}</span>
+            </div>
+            <div class="chips-row">
+              @for (s of product().sizes; track s) {
+                <button 
+                  type="button" 
+                  class="size-chip" 
+                  [class.active]="selectedSize() === s" 
+                  (click)="setSize(s)">
+                  {{ s }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Color Selection -->
+        @if (product().colors && product().colors.length > 0) {
+          <div class="option-section">
+            <div class="option-header">
+              <span class="option-title">Color Palette:</span>
+              <span class="option-selected">{{ selectedColor() }}</span>
+            </div>
+            <div class="chips-row">
+              @for (c of product().colors; track c) {
+                <button 
+                  type="button" 
+                  class="color-chip" 
+                  [class.active]="selectedColor() === c" 
+                  (click)="setColor(c)">
+                  {{ c }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Stock Status -->
+        <div class="stock-indicator">
+          @if (product().stock > 0) {
+            <span class="in-stock-dot"></span>
+            <span class="stock-text">In Stock ({{ product().stock }} pieces remaining in boutique)</span>
+          } @else {
+            <span class="out-stock-dot"></span>
+            <span class="stock-text out">Currently Sold Out</span>
+          }
+        </div>
+
+        <!-- Quantity & Add to Cart -->
+        <div class="action-row">
+          <div class="qty-control">
+            <button (click)="updateQty(-1)">-</button>
+            <span>{{ quantity() }}</span>
+            <button (click)="updateQty(1)">+</button>
+          </div>
+
+          <button 
+            class="btn btn-primary add-bag-btn" 
+            [disabled]="product().stock <= 0" 
+            (click)="addToCart()">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <span>{{ addedFeedback() ? 'Added to Bag! ✓' : 'Add to Bag' }}</span>
+          </button>
+
+          <button 
+            class="btn btn-outline wishlist-toggle-btn" 
+            [class.wishlisted]="isWishlisted()" 
+            (click)="toggleWishlist()" 
+            title="Wishlist">
+            <span class="material-symbols-outlined" [class.icon-filled]="isWishlisted()">
+              favorite
+            </span>
+          </button>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: center;">
+          <a [routerLink]="['/product', product().id]" (click)="dismiss()" style="font-size: 0.8rem; color: var(--primary-gold-dark); font-weight: 600; text-decoration: underline;">
+            Open Dedicated Product Page & Details →
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+

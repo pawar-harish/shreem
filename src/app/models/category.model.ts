@@ -1,0 +1,10 @@
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  imageUrl: string;
+  itemCount?: number;
+  isFeatured?: boolean;
+}
+

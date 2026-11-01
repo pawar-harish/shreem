@@ -1,0 +1,503 @@
+<div class="admin-products-page">
+  
+  <!-- Page Header -->
+  <div class="admin-header-row">
+    <div>
+      <h1 class="page-title">Clothing Products Management</h1>
+      <p class="page-subtitle">Add, edit, remove, and manage fashion inventory directly stored in collections.</p>
+    </div>
+    <div class="header-actions">
+      @if (totalCount() === 0 && !isLoading()) {
+        <button class="btn btn-outline" (click)="seedDefaultCatalog()">
+          <span class="material-symbols-outlined">cloud_upload</span>
+          <span>Seed Initial Catalog</span>
+        </button>
+      }
+      <button class="btn btn-primary" (click)="openAddModal()" [disabled]="dynamicCategories().length === 0">
+        <span class="material-symbols-outlined">add</span>
+        <span>Add Clothing Product</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Alert if any -->
+  @if (errorMessage()) {
+    <div class="alert-box error">
+      <span class="material-symbols-outlined">error</span>
+      <div class="alert-content">
+        <strong>Firestore Access Error:</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- Notice if no categories exist yet -->
+  @if (dynamicCategories().length === 0 && !isLoading()) {
+    <div class="alert-box warning">
+      <span class="material-symbols-outlined">category</span>
+      <div class="alert-content">
+        <strong>No Categories Created Yet:</strong>
+        <p>Please create categories (e.g. Women, Men, Kids) before adding products, or click "Seed Initial Catalog".</p>
+      </div>
+    </div>
+  }
+
+  <!-- Metric Badges Row (Dynamically populated from Firestore) -->
+  <div class="stats-overview-grid">
+    <div class="stat-card" (click)="setCategory('all')" [class.active-card]="selectedCategory() === 'all'">
+      <div class="stat-icon-wrapper gold-theme">
+        <span class="material-symbols-outlined">inventory_2</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ totalCount() }}</span>
+        <span class="stat-name">All Products</span>
+      </div>
+    </div>
+
+    @for (cat of dynamicCategories(); track cat.id) {
+      <div class="stat-card" (click)="setCategory(cat.name)" [class.active-card]="selectedCategory().toLowerCase() === cat.name.toLowerCase()">
+        <div class="stat-icon-wrapper category-theme">
+          <span class="material-symbols-outlined">checkroom</span>
+        </div>
+        <div class="stat-data">
+          <span class="stat-val">{{ countByCategory(cat.name) }}</span>
+          <span class="stat-name">{{ cat.name }}</span>
+        </div>
+      </div>
+    }
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper alert-theme">
+        <span class="material-symbols-outlined">warning</span>
+      </div>
+      <div class="stat-data">
+        <span class="stat-val">{{ lowStockCount() }}</span>
+        <span class="stat-name">Low Stock (&le;10)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Filter Bar & Search Filters -->
+  <div class="table-control-card">
+    <div class="filter-top-row">
+      <!-- Dynamic Category Tabs -->
+      <div class="category-tabs">
+        <button 
+          class="cat-tab" 
+          [class.active]="selectedCategory() === 'all'" 
+          (click)="setCategory('all')">
+          All ({{ totalCount() }})
+        </button>
+        @for (cat of dynamicCategories(); track cat.id) {
+          <button 
+            class="cat-tab" 
+            [class.active]="selectedCategory().toLowerCase() === cat.name.toLowerCase()" 
+            (click)="setCategory(cat.name)">
+            {{ cat.name }} ({{ countByCategory(cat.name) }})
+          </button>
+        }
+      </div>
+
+      <!-- Right Search & Stock Dropdown -->
+      <div class="search-filter-group">
+        <div class="admin-search-box">
+          <span class="material-symbols-outlined">search</span>
+          <input 
+            type="text" 
+            placeholder="Search by title, subcategory, fabric..." 
+            [ngModel]="searchQuery()" 
+            (ngModelChange)="searchQuery.set($event)"
+          />
+          @if (searchQuery()) {
+            <button class="clear-btn" (click)="searchQuery.set('')">×</button>
+          }
+        </div>
+
+        <select 
+          class="filter-select" 
+          [ngModel]="stockFilter()" 
+          (ngModelChange)="stockFilter.set($event)">
+          <option value="all">All Inventory</option>
+          <option value="in_stock">In Stock (>0)</option>
+          <option value="low_stock">Low Stock (&le;10)</option>
+          <option value="out_of_stock">Out of Stock (0)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading Skeleton Indicator -->
+    @if (isLoading()) {
+      <div class="loading-state-container">
+        <div class="spinner"></div>
+        <p>Syncing products from Firestore collections...</p>
+      </div>
+    } @else {
+      <!-- Products Table -->
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Subcategory</th>
+              <th>Price</th>
+              <th>Sizes</th>
+              <th>Stock Status</th>
+              <th>Featured</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (filteredProducts().length === 0) {
+              <tr>
+                <td colspan="8" class="empty-table-cell">
+                  <span class="material-symbols-outlined empty-table-icon">inventory_2</span>
+                  <h4>No products found in this view</h4>
+                  <p>Try resetting filters or add a new product under <strong>{{ selectedCategory() === 'all' ? 'any category' : selectedCategory() }}</strong>.</p>
+                  <button class="btn btn-primary btn-sm" (click)="openAddModal()" [disabled]="dynamicCategories().length === 0">
+                    <span class="material-symbols-outlined">add</span>
+                    Add Product Now
+                  </button>
+                </td>
+              </tr>
+            } @else {
+              @for (p of filteredProducts(); track p.id) {
+                <tr>
+                  <!-- Product Preview -->
+                  <td>
+                    <div class="table-product-cell">
+                      <img [src]="p.imageUrl" [alt]="p.name" class="table-thumb" />
+                      <div class="table-prod-details">
+                        <span class="table-prod-title">{{ p.name }}</span>
+                        <span class="table-prod-id">{{ p.id }} • {{ p.fabric || 'Luxury blend' }}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Dynamic Category Badge -->
+                  <td>
+                    <span class="badge badge-gold">
+                      {{ p.category }}
+                    </span>
+                  </td>
+
+                  <!-- Subcategory -->
+                  <td>
+                    <span class="subcat-badge">{{ p.subcategory }}</span>
+                  </td>
+
+                  <!-- Price -->
+                  <td>
+                    <div class="price-cell">
+                      <strong>₹{{ p.price | number }}</strong>
+                      @if (p.originalPrice) {
+                        <small class="mrp-strike">₹{{ p.originalPrice | number }}</small>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Sizes -->
+                  <td>
+                    <div class="sizes-wrap">
+                      @for (s of p.sizes; track s) {
+                        <span class="size-tag">{{ s }}</span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Stock Counter & Quick Adjust -->
+                  <td>
+                    <div class="stock-cell">
+                      <div class="stock-badge-row">
+                        <span class="stock-dot" [class.low]="p.stock <= 10 && p.stock > 0" [class.out]="p.stock <= 0"></span>
+                        <span class="stock-number">{{ p.stock }} pcs</span>
+                      </div>
+                      <div class="stock-buttons">
+                        <button (click)="adjustStock(p, -1)" title="Decrease Stock">-</button>
+                        <button (click)="adjustStock(p, 1)" title="Increase Stock">+</button>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Featured Indicator -->
+                  <td>
+                    @if (p.isFeatured) {
+                      <span class="material-symbols-outlined icon-filled" style="color: var(--primary-gold);">star</span>
+                    } @else {
+                      <span class="material-symbols-outlined" style="color: #d1d5db;">star</span>
+                    }
+                  </td>
+
+                  <!-- Actions -->
+                  <td style="text-align: right;">
+                    <div class="action-buttons-group">
+                      <button class="btn-action edit" (click)="openEditModal(p)" title="Edit Product">
+                        <span class="material-symbols-outlined">edit</span>
+                      </button>
+                      <button class="btn-action delete" (click)="confirmDelete(p)" title="Delete Product">
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer with Real-time Info -->
+      <div class="table-footer-bar">
+        <span>Showing <strong>{{ filteredProducts().length }}</strong> clothing items in catalog</span>
+        <span class="firestore-note">⚡ Real-time updates active via Firestore <code>onSnapshot</code></span>
+      </div>
+    }
+  </div>
+
+  <!-- ADD / EDIT PRODUCT MODAL -->
+  @if (isModalOpen()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        
+        <div class="modal-header">
+          <div class="title-with-badge">
+            <span class="material-symbols-outlined header-icon">
+              {{ modalMode() === 'add' ? 'add_circle' : 'edit_square' }}
+            </span>
+            <div>
+              <h3>{{ modalMode() === 'add' ? 'Add New Clothing Product' : 'Edit Clothing Product' }}</h3>
+              <p class="subtext">Data will be stored directly in Firestore <code>/products</code> collection.</p>
+            </div>
+          </div>
+          <button class="btn-icon" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body form-modal-body">
+          <div class="form-grid-layout">
+            
+            <!-- Left Form Fields -->
+            <div class="form-left-col">
+              <!-- Product Title -->
+              <div class="form-group">
+                <label class="form-label">Product Name / Title *</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [ngModel]="formData().name" 
+                  (ngModelChange)="formData.update(f => ({ ...f, name: $event }))"
+                  placeholder="e.g. Royal Banarasi Silk Saree"
+                  required 
+                />
+              </div>
+
+              <!-- Dynamic Category Selection & Subcategory -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">Category * (From Firestore)</label>
+                  <select 
+                    class="form-control" 
+                    [ngModel]="formData().category" 
+                    (ngModelChange)="formData.update(f => ({ ...f, category: $event }))">
+                    @for (cat of dynamicCategories(); track cat.id) {
+                      <option [value]="cat.name">{{ cat.name }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Subcategory / Type</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    [ngModel]="formData().subcategory" 
+                    (ngModelChange)="formData.update(f => ({ ...f, subcategory: $event }))"
+                    placeholder="e.g. Sarees, Kurta Sets, Sherwanis"
+                  />
+                </div>
+              </div>
+
+              <!-- Price & Original Price & Stock -->
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label class="form-label">Offer Price (₹) *</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    [ngModel]="formData().price" 
+                    (ngModelChange)="formData.update(f => ({ ...f, price: $event }))"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Original MRP (₹)</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    [ngModel]="formData().originalPrice" 
+                    (ngModelChange)="formData.update(f => ({ ...f, originalPrice: $event }))"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Stock Quantity *</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    [ngModel]="formData().stock" 
+                    (ngModelChange)="formData.update(f => ({ ...f, stock: $event }))"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <!-- Fabric & Colors -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">Fabric / Weave</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    [ngModel]="formData().fabric" 
+                    (ngModelChange)="formData.update(f => ({ ...f, fabric: $event }))"
+                    placeholder="e.g. Pure Silk, Chanderi Cotton, European Linen"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Colors (Comma separated)</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    [ngModel]="formData().colors" 
+                    (ngModelChange)="formData.update(f => ({ ...f, colors: $event }))"
+                    placeholder="e.g. Crimson Red, Gold, Emerald"
+                  />
+                </div>
+              </div>
+
+              <!-- Sizes Checkbox Selector -->
+              <div class="form-group">
+                <label class="form-label">Available Sizes</label>
+                <div class="size-checkboxes">
+                  @for (size of availableSizeOptions; track size) {
+                    <button 
+                      type="button" 
+                      class="size-toggle-pill" 
+                      [class.checked]="isSizeSelected(size)" 
+                      (click)="toggleSizeSelection(size)">
+                      {{ size }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label class="form-label">Product Description</label>
+                <textarea 
+                  rows="3" 
+                  class="form-control" 
+                  [ngModel]="formData().description" 
+                  (ngModelChange)="formData.update(f => ({ ...f, description: $event }))"
+                  placeholder="Artisanal description of the ensemble..."
+                ></textarea>
+              </div>
+
+              <!-- Featured Checkbox -->
+              <div class="form-group-checkbox">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [ngModel]="formData().isFeatured" 
+                    (ngModelChange)="formData.update(f => ({ ...f, isFeatured: $event }))"
+                  />
+                  <span>Feature on User Homepage</span>
+                </label>
+              </div>
+
+            </div>
+
+            <!-- Right Media & Preview Col -->
+            <div class="form-right-col">
+              <label class="form-label">Product Image URL *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [ngModel]="formData().imageUrl" 
+                (ngModelChange)="formData.update(f => ({ ...f, imageUrl: $event }))"
+                placeholder="https://..."
+              />
+
+              <!-- Preview Frame -->
+              <div class="image-preview-box">
+                <img [src]="formData().imageUrl" [alt]="formData().name || 'Product Preview'" />
+              </div>
+
+              <!-- Preset Quick Selection -->
+              <div class="presets-section">
+                <label class="form-label" style="margin-top: 0.75rem;">Or Choose Preset Clothing Image:</label>
+                <div class="preset-thumbs-grid">
+                  @for (preset of presetImages; track preset.url) {
+                    <button 
+                      type="button" 
+                      class="preset-thumb-btn" 
+                      [class.active]="formData().imageUrl === preset.url" 
+                      (click)="selectPresetImage(preset.url)">
+                      <img [src]="preset.url" [alt]="preset.label" />
+                      <span>{{ preset.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="saveProduct()" 
+            [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span>Saving to Firestore...</span>
+            } @else {
+              <span class="material-symbols-outlined">save</span>
+              <span>{{ modalMode() === 'add' ? 'Create Product in Firestore' : 'Save Changes' }}</span>
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  @if (productToDelete()) {
+    <div class="modal-overlay" (click)="productToDelete.set(null)">
+      <div class="modal-card modal-sm delete-confirm-card" (click)="$event.stopPropagation()">
+        <div class="delete-icon-circle">
+          <span class="material-symbols-outlined">delete_forever</span>
+        </div>
+        <h3 class="delete-title">Delete Product?</h3>
+        <p class="delete-desc">
+          Are you sure you want to permanently delete <strong>"{{ productToDelete()?.name }}"</strong> from Firestore?
+        </p>
+        <div class="delete-actions">
+          <button class="btn btn-outline" (click)="productToDelete.set(null)" [disabled]="isDeleting()">Cancel</button>
+          <button class="btn btn-danger" (click)="executeDelete()" [disabled]="isDeleting()">
+            <span class="material-symbols-outlined">delete</span>
+            <span>{{ isDeleting() ? 'Deleting...' : 'Delete from Firestore' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

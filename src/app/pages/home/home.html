@@ -1,0 +1,319 @@
+<div class="shop-page">
+  
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <span class="hero-badge">THE FESTIVE & COUTURE EDIT</span>
+        <h1 class="font-serif hero-headline">
+          Heritage Threads. <br />
+          <span class="gold-gradient-text">Contemporary Grace.</span>
+        </h1>
+        <p class="hero-desc">
+          Immerse yourself in Shreem's signature clothing creations — pure Banarasi silks, bespoke bandhgalas for men, artisanal lehengas, and joyful celebratory wear for children.
+        </p>
+
+        <!-- Dynamic Category CTA Buttons from Firestore -->
+        <div class="hero-cta-group">
+          <button class="btn btn-primary hero-btn" (click)="setCategory('all')">
+            <span>Explore All</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+          @for (cat of dynamicCategories().slice(0, 3); track cat.id) {
+            <button class="btn btn-outline hero-btn" (click)="setCategory(cat.name)">
+              <span>{{ cat.name }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat-cell">
+            <span class="stat-number">100%</span>
+            <span class="stat-lbl">Artisan Handcrafted</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-cell">
+            <span class="stat-number">Firestore</span>
+            <span class="stat-lbl">Live Dynamic Catalog</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-cell">
+            <span class="stat-number">Free Shipping</span>
+            <span class="stat-lbl">On orders above ₹2,999</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="visual-card visual-card-primary">
+          <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80" alt="Shreem Couture Model" />
+          <div class="visual-tag">
+            <span class="tag-title">Banarasi Pure Silk</span>
+            <span class="tag-price">₹8,499</span>
+          </div>
+        </div>
+        <div class="visual-card visual-card-secondary">
+          <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80" alt="Men's Kurta & Bundi" />
+          <div class="visual-tag">
+            <span class="tag-title">Men's Bundi Set</span>
+            <span class="tag-price">₹7,999</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Error Alert if any -->
+  @if (errorMessage()) {
+    <div class="container" style="margin-top: 1.5rem;">
+      <div class="alert-box error">
+        <span class="material-symbols-outlined">cloud_off</span>
+        <div class="alert-content">
+          <strong>Database Notice:</strong>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Category Showcase Cards (Dynamically Loaded from Firestore) -->
+  @if (dynamicCategories().length > 0) {
+    <section class="container category-showcase-section">
+      <div class="section-heading text-center">
+        <span class="section-tag">CURATED BY GENDER & OCCASION</span>
+        <h2 class="font-serif">Explore by Category</h2>
+        <p class="section-subtitle">Discover handcrafted silhouettes tailored for every family member</p>
+      </div>
+
+      <div class="category-cards-grid">
+        @for (cat of dynamicCategories(); track cat.id) {
+          <div class="category-card" (click)="setCategory(cat.name)">
+            <div class="category-card-img-wrapper">
+              <img [src]="cat.imageUrl" [alt]="cat.name" />
+              <div class="category-overlay"></div>
+            </div>
+            <div class="category-card-content">
+              <h3 class="category-name">{{ cat.name }}</h3>
+              <p class="category-desc">{{ cat.description }}</p>
+              <span class="category-link">
+                <span>View Clothing</span>
+                <span class="material-symbols-outlined">east</span>
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Product Catalog Section -->
+  <section class="container catalog-section" id="catalog">
+    <div class="catalog-header-bar">
+      <!-- Category Filter Tabs (Dynamic from Firestore) -->
+      <div class="category-pills-bar">
+        <button 
+          class="cat-pill" 
+          [class.active]="selectedCategory() === 'all'" 
+          (click)="setCategory('all')">
+          All Clothing
+        </button>
+        @for (cat of dynamicCategories(); track cat.id) {
+          <button 
+            class="cat-pill" 
+            [class.active]="selectedCategory().toLowerCase() === cat.name.toLowerCase()" 
+            (click)="setCategory(cat.name)">
+            {{ cat.name }}
+          </button>
+        }
+      </div>
+
+      <!-- Controls: Sort & Search info -->
+      <div class="catalog-controls">
+        <!-- Size Quick Filter -->
+        <div class="control-group">
+          <label class="control-label">Size:</label>
+          <select 
+            class="control-select" 
+            [ngModel]="selectedSizeFilter()" 
+            (ngModelChange)="setSize($event)">
+            @for (s of availableSizes; track s) {
+              <option [value]="s">{{ s === 'all' ? 'All Sizes' : s }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Sort Select -->
+        <div class="control-group">
+          <label class="control-label">Sort:</label>
+          <select 
+            class="control-select" 
+            [ngModel]="selectedSort()" 
+            (ngModelChange)="setSort($event)">
+            <option value="featured">Featured First</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Filters Feedback & Count -->
+    <div class="catalog-meta-info">
+      <span class="product-count">
+        Showing <strong>{{ filteredProducts().length }}</strong> exquisite pieces
+        @if (selectedCategory() !== 'all') {
+          in <em>{{ selectedCategory() | uppercase }}</em>
+        }
+        @if (searchQuery()) {
+          matching "<em>{{ searchQuery() }}</em>"
+        }
+      </span>
+
+      @if (selectedCategory() !== 'all' || searchQuery() || selectedSizeFilter() !== 'all') {
+        <button class="clear-filters-btn" (click)="setCategory('all'); searchQuery.set(''); setSize('all')">
+          <span class="material-symbols-outlined">restart_alt</span>
+          Reset Filters
+        </button>
+      }
+    </div>
+
+    <!-- Loading Skeleton Indicator -->
+    @if (isLoading()) {
+      <div class="loading-state-container">
+        <div class="spinner"></div>
+        <p>Loading luxury garments from Firestore database...</p>
+      </div>
+    } @else {
+      <!-- Products Grid -->
+      @if (filteredProducts().length === 0) {
+        <div class="no-products-found">
+          <span class="material-symbols-outlined empty-bag-icon">checkroom</span>
+          <h3>No clothing items found matching criteria</h3>
+          <p>Try switching category or resetting size and search filters.</p>
+          <button class="btn btn-outline" (click)="setCategory('all'); searchQuery.set(''); setSize('all')">
+            Show All Apparel
+          </button>
+        </div>
+      } @else {
+        <div class="products-grid">
+          @for (product of filteredProducts(); track product.id) {
+            <div class="product-card" (click)="openProductModal(product)">
+              <!-- Thumbnail Box -->
+              <div class="product-card-img-wrapper">
+                <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                
+                <!-- Category Badge -->
+                <div class="card-badges-top">
+                  <span class="badge badge-gold">
+                    {{ product.category }}
+                  </span>
+
+                  @if (product.discount) {
+                    <span class="badge-discount">-{{ product.discount }}%</span>
+                  }
+                </div>
+
+                <!-- Wishlist Heart Button -->
+                <button 
+                  class="card-wishlist-btn" 
+                  [class.active]="isWishlisted(product.id)" 
+                  (click)="toggleWishlist(product, $event)"
+                  title="Save to Wishlist">
+                  <span class="material-symbols-outlined" [class.icon-filled]="isWishlisted(product.id)">
+                    favorite
+                  </span>
+                </button>
+
+                <!-- Hover Quick Action Overlay -->
+                <div class="card-hover-actions">
+                  <button class="btn-quick-view" (click)="openProductModal(product)">
+                    <span class="material-symbols-outlined">visibility</span>
+                    Quick View
+                  </button>
+                </div>
+              </div>
+
+              <!-- Content Details -->
+              <div class="product-card-body">
+                <div class="subcat-row">
+                  <span class="subcat-name">{{ product.subcategory }}</span>
+                  <div class="card-rating">
+                    <span class="material-symbols-outlined star-icon">star</span>
+                    <span>{{ product.rating }}</span>
+                  </div>
+                </div>
+
+                <h4 class="product-title" [title]="product.name">{{ product.name }}</h4>
+
+                @if (product.fabric) {
+                  <span class="fabric-line">{{ product.fabric }}</span>
+                }
+
+                <!-- Sizes list preview -->
+                <div class="size-pill-row">
+                  @for (size of product.sizes; track size) {
+                    <span class="size-pill-tag">{{ size }}</span>
+                  }
+                </div>
+
+                <!-- Pricing and Cart Button -->
+                <div class="card-pricing-row">
+                  <div class="pricing-box">
+                    <span class="card-price">₹{{ product.price | number }}</span>
+                    @if (product.originalPrice) {
+                      <span class="card-mrp">₹{{ product.originalPrice | number }}</span>
+                    }
+                  </div>
+
+                  <button 
+                    class="card-add-cart-btn" 
+                    [disabled]="product.stock <= 0" 
+                    (click)="quickAddToCart(product, $event)"
+                    title="Add to Shopping Bag">
+                    <span class="material-symbols-outlined">shopping_bag</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </section>
+
+  <!-- Artisanal Brand Banner -->
+  <section class="container brand-story-section">
+    <div class="story-card">
+      <div class="story-content">
+        <span class="section-tag" style="color: var(--primary-gold);">THE ART OF SHREEM</span>
+        <h2 class="font-serif">Woven by Heritage Masters</h2>
+        <p>
+          Each garment at Shreem tells the story of generational craftsmanship. From the handlooms of Varanasi to the bespoke tailoring rooms of Rajasthan, we honor genuine weaves, opulent zari, and pure natural fabrics that flow like poetry.
+        </p>
+        <div class="story-points">
+          <div class="point-item">
+            <span class="material-symbols-outlined">palette</span>
+            <span>Natural AZO-free botanical and heritage dyes</span>
+          </div>
+          <div class="point-item">
+            <span class="material-symbols-outlined">workspace_premium</span>
+            <span>Silk Mark and Authenticity certification</span>
+          </div>
+        </div>
+      </div>
+      <div class="story-img">
+        <img src="https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80" alt="Indian Textile Craftsmanship" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Detail Modal Popup -->
+  @if (activeProductForModal()) {
+    <app-product-detail-modal 
+      [product]="activeProductForModal()!" 
+      (close)="closeProductModal()">
+    </app-product-detail-modal>
+  }
+
+</div>

@@ -1,59 +1,132 @@
-# Shreem
+# Shreem — Luxury Couture & Apparel E-Commerce
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+**Shreem** is an enterprise-grade E-Commerce Web Application focused primarily on contemporary and ethnic clothing (Women, Men, Kids, and Artisanal Weaves). Built with **Angular (Standalone Architecture)** and powered by **Google Firebase Firestore** for real-time cloud data management.
 
-## Development server
+---
 
-To start a local development server, run:
+## 🌟 Key Architecture & Highlights
 
-```bash
-ng serve
-```
+### 1. Separate User & Admin Panels
+- **User Panel (`/`)**:
+  - **Category Showcase**: Seamless navigation across Men, Women, Kids, and Ethnic Silks.
+  - **Live Filters & Sorting**: Category pills, size filter, price sort (low-to-high, high-to-low), rating sort, and live search.
+  - **Product Quick View & Details**: Detailed modal with image gallery, fabric specifications, size selection chips, color swatches, stock indicator, and instant Add to Bag.
+  - **Slide-out Cart Drawer**: Free luxury shipping progress bar, quantity increment/decrement, promo code engine (`SHREEM10`, `ROYAL20`), price breakdown.
+  - **Slide-out Wishlist Drawer**: Save favourite garments with 1-click move to bag.
+  - **Checkout Flow**: Complete shipping address entry, payment method picker (UPI, COD, Card), and real-time order placement saved directly into Firestore.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **Admin Panel (`/admin`)**:
+  - **Category-Wise Product Management (`/admin/products`)**:
+    - Add new clothing products with image presets or custom URLs, sizes (XS, S, M, L, XL, XXL), fabric, colors, and stock.
+    - Edit existing products with immediate Firestore synchronization.
+    - Delete products with confirmation modal.
+    - Quick +/- stock increment/decrement directly from the table.
+    - Filter products category-wise (Women, Men, Kids, Ethnic) or by stock status (In stock, Low stock, Out of stock).
+  - **Category Management (`/admin/categories`)**:
+    - Add, edit, and delete clothing categories.
+  - **Order Management & Fulfillment (`/admin/orders`)**:
+    - Real-time customer orders table.
+    - Change order status (`Pending` ➔ `Processing` ➔ `Shipped` ➔ `Delivered` ➔ `Cancelled`) updating live in Firestore.
+    - View full customer delivery information, address, and items ordered.
+  - **Firebase Firestore Settings (`/admin/settings`)**:
+    - Real-time Firestore connection status monitor.
+    - Interactive Firebase project credentials manager.
+    - One-click **"Seed Catalog to Cloud Firestore"** button to populate categories and clothing pieces into your live Firestore collections (`products` and `categories`).
+    - Reset local demo storage anytime.
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🗄️ Firestore Database Schema
 
-```bash
-ng generate component component-name
-```
+The application uses three primary collections:
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+1. **`products`**:
+   - `id`: string (e.g. `shreem-w-001`)
+   - `name`: string
+   - `category`: `'Women' | 'Men' | 'Kids' | 'Ethnic & Festive'`
+   - `subcategory`: string (e.g. `'Sarees'`, `'Kurta Sets'`, `'Sherwanis'`, `'Lehengas'`)
+   - `price`: number
+   - `originalPrice`: number
+   - `discount`: number
+   - `description`: string
+   - `imageUrl`: string
+   - `additionalImages`: string[]
+   - `sizes`: string[]
+   - `colors`: string[]
+   - `fabric`: string
+   - `stock`: number
+   - `rating`: number
+   - `reviewCount`: number
+   - `isFeatured`: boolean
+   - `createdAt`: string
 
-```bash
-ng generate --help
-```
+2. **`categories`**:
+   - `id`: string
+   - `name`: string
+   - `slug`: string
+   - `description`: string
+   - `imageUrl`: string
+   - `isFeatured`: boolean
 
-## Building
+3. **`orders`**:
+   - `id`: string (e.g. `ORD-984210`)
+   - `customerName`: string
+   - `email`: string
+   - `phone`: string
+   - `address`: string
+   - `city`: string
+   - `postalCode`: string
+   - `items`: Array<{ productId, name, price, quantity, size, color, imageUrl }>
+   - `subtotal`: number
+   - `shipping`: number
+   - `discount`: number
+   - `totalAmount`: number
+   - `status`: `'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'`
+   - `paymentMethod`: string
+   - `createdAt`: string
 
-To build the project run:
+---
 
-```bash
-ng build
-```
+## 🚀 Getting Started
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Prerequisites
+- Node.js `v20+` or `v22+`
+- npm `10+`
 
-## Running unit tests
+### Installation & Run
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+1. Clone and install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-ng test
-```
+2. Start the development server:
+   ```bash
+   npm start
+   ```
+   or:
+   ```bash
+   ng serve
+   ```
 
-## Running end-to-end tests
+3. Open your browser:
+   - **Customer Storefront**: `http://localhost:4200/`
+   - **Admin Management Portal**: `http://localhost:4200/admin`
 
-For end-to-end (e2e) testing, run:
+### Connecting Live Firebase Firestore
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+1. Open the Admin Panel at `http://localhost:4200/admin/settings`.
+2. Enter your Firebase project credentials (`apiKey`, `projectId`, `authDomain`, etc.).
+3. Click **"Save & Connect Firestore"**.
+4. Click **"Seed Catalog to Cloud Firestore"** to automatically populate your Firestore database with the demo clothing catalog!
+5. Ensure your Firestore Security Rules permit read/write access during development:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /{document=**} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```

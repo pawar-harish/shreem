@@ -1,0 +1,86 @@
+<div class="admin-wrapper">
+  <!-- Left Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <a routerLink="/" class="brand-link">
+        <span class="brand-icon">श्री</span>
+        <div class="brand-info">
+          <span class="brand-title">SHREEM</span>
+          <span class="portal-tag">ADMIN CONSOLE</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Navigation List -->
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">STORE MANAGEMENT</span>
+      @for (item of navItems; track item.route) {
+        <a 
+          [routerLink]="item.route" 
+          routerLinkActive="active-nav-item" 
+          class="sidebar-nav-item">
+          <span class="material-symbols-outlined">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <!-- DB Status Card in Sidebar -->
+    <!-- <div class="sidebar-db-status">
+      <div class="db-status-header">
+        <span class="status-indicator-dot" [class.dot-online]="(firebaseService.connectionStatus$ | async) === 'connected'"></span>
+        <span class="status-title">
+          {{ (firebaseService.connectionStatus$ | async) === 'connected' ? 'Firestore Live' : 'Demo Local Mode' }}
+        </span>
+      </div>
+      <p class="db-status-desc">
+        {{ (firebaseService.connectionStatus$ | async) === 'connected' 
+          ? 'Connected to Firebase Cloud DB' 
+          : 'Ready for your Firestore API keys' }}
+      </p>
+      <a routerLink="/admin/settings" class="config-link">Configure Firestore →</a>
+    </div> -->
+
+    <!-- Return to Storefront Link -->
+    <div class="sidebar-footer">
+      <a routerLink="/" class="btn-storefront">
+        <span class="material-symbols-outlined">storefront</span>
+        <span>View Customer Storefront</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="admin-main">
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <div class="admin-pill">
+          <span class="material-symbols-outlined icon-sm">shield</span>
+          <span>Administrator Access</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <a routerLink="/" target="_blank" class="btn btn-outline btn-sm">
+          <span class="material-symbols-outlined">open_in_new</span>
+          Preview Website
+        </a>
+
+        <div class="admin-user-pill">
+          <div class="avatar-circle">SA</div>
+          <div class="admin-info">
+            <span class="admin-name">Shreem Admin</span>
+            <span class="admin-role">Store Manager</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Router Outlet for admin pages -->
+    <div class="admin-body">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
+

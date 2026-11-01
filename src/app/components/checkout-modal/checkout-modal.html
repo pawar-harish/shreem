@@ -1,0 +1,232 @@
+<div class="modal-overlay" (click)="dismiss()">
+  <div class="modal-card checkout-modal-card" (click)="$event.stopPropagation()">
+    
+    @if (!orderSuccess()) {
+      <!-- Checkout Form -->
+      <div class="modal-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined header-gold-icon">local_mall</span>
+          <div>
+            <h3>Secure Couture Checkout</h3>
+            <p class="subtitle">Enter delivery address and confirm your Shreem order.</p>
+          </div>
+        </div>
+        <button class="btn-icon" (click)="dismiss()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Order mini summary -->
+        <div class="order-summary-box">
+          <div class="summary-top">
+            <span class="item-count">{{ cartService.itemCount() }} Items in Bag</span>
+            <span class="total-payable">Total to Pay: <strong>₹{{ cartService.grandTotal() | number }}</strong></span>
+          </div>
+          <div class="mini-thumbs">
+            @for (item of cartService.cartItems(); track item.productId + item.size) {
+              <div class="mini-thumb-item" [title]="item.name + ' (' + item.size + ')'">
+                <img [src]="item.imageUrl" [alt]="item.name" />
+                <span class="mini-qty">{{ item.quantity }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <form (ngSubmit)="placeOrder()" class="checkout-form">
+          <h4 class="form-section-title">Shipping & Delivery Details</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [ngModel]="customerName()" 
+                (ngModelChange)="customerName.set($event)" 
+                name="customerName" 
+                required 
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [ngModel]="phone()" 
+                (ngModelChange)="phone.set($event)" 
+                name="phone" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [ngModel]="email()" 
+              (ngModelChange)="email.set($event)" 
+              name="email" 
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Street Address / Landmark *</label>
+            <textarea 
+              rows="2" 
+              class="form-control" 
+              [ngModel]="address()" 
+              (ngModelChange)="address.set($event)" 
+              name="address" 
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">City *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [ngModel]="city()" 
+                (ngModelChange)="city.set($event)" 
+                name="city" 
+                required 
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Postal / Pincode *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [ngModel]="postalCode()" 
+                (ngModelChange)="postalCode.set($event)" 
+                name="postalCode" 
+                required 
+              />
+            </div>
+          </div>
+
+          <h4 class="form-section-title" style="margin-top: 1rem;">Select Payment Method</h4>
+          <div class="payment-options">
+            <label class="payment-tile" [class.selected]="paymentMethod() === 'UPI'">
+              <input 
+                type="radio" 
+                name="payment" 
+                value="UPI" 
+                [checked]="paymentMethod() === 'UPI'" 
+                (change)="paymentMethod.set('UPI')" 
+              />
+              <span class="material-symbols-outlined">qr_code_2</span>
+              <div class="tile-info">
+                <strong>Instant UPI / QR</strong>
+                <small>Google Pay, PhonePe, Paytm</small>
+              </div>
+            </label>
+
+            <label class="payment-tile" [class.selected]="paymentMethod() === 'Cash on Delivery'">
+              <input 
+                type="radio" 
+                name="payment" 
+                value="Cash on Delivery" 
+                [checked]="paymentMethod() === 'Cash on Delivery'" 
+                (change)="paymentMethod.set('Cash on Delivery')" 
+              />
+              <span class="material-symbols-outlined">payments</span>
+              <div class="tile-info">
+                <strong>Cash on Delivery (COD)</strong>
+                <small>Pay upon package doorstep delivery</small>
+              </div>
+            </label>
+
+            <label class="payment-tile" [class.selected]="paymentMethod() === 'Credit/Debit Card'">
+              <input 
+                type="radio" 
+                name="payment" 
+                value="Credit/Debit Card" 
+                [checked]="paymentMethod() === 'Credit/Debit Card'" 
+                (change)="paymentMethod.set('Credit/Debit Card')" 
+              />
+              <span class="material-symbols-outlined">credit_card</span>
+              <div class="tile-info">
+                <strong>Credit / Debit Card</strong>
+                <small>Visa, Mastercard, RuPay</small>
+              </div>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="dismiss()">Cancel</button>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="placeOrder()" 
+          [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span>Saving to Firestore...</span>
+          } @else {
+            <span>Confirm & Place Order (₹{{ cartService.grandTotal() | number }})</span>
+            <span class="material-symbols-outlined">verified</span>
+          }
+        </button>
+      </div>
+    } @else {
+      <!-- Order Placed Success View -->
+      <div class="modal-body success-body">
+        <div class="success-icon-badge">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <h2 class="font-serif success-title">Order Confirmed with Shreem!</h2>
+        <p class="success-subtitle">
+          Thank you, <strong>{{ orderSuccess()?.customerName }}</strong>. Your luxury clothing order has been placed and registered in the Firestore database.
+        </p>
+
+        <div class="order-receipt-card">
+          <div class="receipt-header">
+            <div>
+              <span class="receipt-tag">Order Reference</span>
+              <h4>{{ orderSuccess()?.id }}</h4>
+            </div>
+            <span class="badge badge-success">{{ orderSuccess()?.status }}</span>
+          </div>
+
+          <div class="receipt-details">
+            <div class="receipt-item">
+              <span class="label">Amount Paid / Due:</span>
+              <span class="val highlight">₹{{ orderSuccess()?.totalAmount | number }}</span>
+            </div>
+            <div class="receipt-item">
+              <span class="label">Payment Mode:</span>
+              <span class="val">{{ orderSuccess()?.paymentMethod }}</span>
+            </div>
+            <div class="receipt-item">
+              <span class="label">Deliver To:</span>
+              <span class="val">{{ orderSuccess()?.address }}, {{ orderSuccess()?.city }} ({{ orderSuccess()?.postalCode }})</span>
+            </div>
+            <div class="receipt-item">
+              <span class="label">Estimated Delivery:</span>
+              <span class="val">3-5 Business Days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <button class="btn btn-primary" (click)="dismiss()">
+            Continue Shopping
+          </button>
+          <a routerLink="/admin/orders" (click)="dismiss()" class="btn btn-outline">
+            <span class="material-symbols-outlined">visibility</span>
+            View in Admin Orders
+          </a>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>
+
